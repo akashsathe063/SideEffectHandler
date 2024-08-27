@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,7 +38,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             SideEffectTheme {
 //                ListComposable()
-                RememberCoroutineScopeLaunchEffect()
+//                RememberCoroutineScopeLaunchEffect()
+//                RememberUpdateState()
+                App()
             }
         }
     }
@@ -150,10 +153,54 @@ fun RememberCoroutineScopeLaunchEffect() {
 @Composable
 fun RememberUpdateState(modifier: Modifier = Modifier) {
     var counter by remember {
-         mutableIntStateOf(0)
+        mutableIntStateOf(0)
     }
     LaunchedEffect(key1 = Unit) {
-        
+        delay(2000)
+        counter = 10
     }
 
+    CounterIncrement(counter = counter)
+
+}
+
+//this is also example of rememberUpdateState
+@Composable
+fun CounterIncrement(counter: Int) {
+    val state = rememberUpdatedState(newValue = counter)
+    LaunchedEffect(Unit) {
+        delay(5000)
+        Log.d("CounterIncrement", "CounterIncrement: ${state.value} ")
+    }
+
+    Text(text = counter.toString())
+}
+
+fun a() {
+    Log.d("a", "a: called function A")
+}
+
+fun b() {
+    Log.d("a", "a: called function B")
+}
+
+@Composable
+fun App(modifier: Modifier = Modifier) {
+    var state by remember {
+        mutableStateOf(::a)
+    }
+    Button(onClick = { state = ::b }) {
+        Text(text = "change the state")
+    }
+    LandingScreen(state)
+
+}
+
+@Composable
+fun LandingScreen(onTimeOut: () -> Unit) {
+    val currentOnTimeOut by rememberUpdatedState(newValue = onTimeOut)
+    LaunchedEffect(true) {
+        delay(5000)
+        currentOnTimeOut()
+    }
 }
