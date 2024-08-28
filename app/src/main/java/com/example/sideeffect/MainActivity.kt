@@ -1,9 +1,15 @@
 package com.example.sideeffect
 
+import android.annotation.SuppressLint
+import android.media.MediaPlayer
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.ViewTreeObserver
+import android.view.WindowInsets
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +20,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -25,13 +33,17 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
 import com.example.sideeffect.ui.theme.SideEffectTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        enableEdgeToEdge()
@@ -40,7 +52,12 @@ class MainActivity : ComponentActivity() {
 //                ListComposable()
 //                RememberCoroutineScopeLaunchEffect()
 //                RememberUpdateState()
-                App()
+//                App()
+//                DisposibleEffectHandler()
+//                MediaComposable()
+                KeyBoardComposable()
+
+                TextField(value = "", onValueChange = {})
             }
         }
     }
@@ -203,4 +220,79 @@ fun LandingScreen(onTimeOut: () -> Unit) {
         delay(5000)
         currentOnTimeOut()
     }
+}
+
+/**
+ * Disposible Effect:-
+ * such side effect in which we require clean up,so there we use the diposible effect
+ * before leaving the composition so there we use this disposible effect to clean up.
+ * it is also run in initial stage
+ * or when key change then it will be run
+ */
+
+@Composable
+fun DisposibleEffectHandler() {
+    var state by remember {
+        mutableStateOf(false)
+    }
+    DisposableEffect(key1 = state) {
+        Log.d("DisposibleEffectHandler", "DisposibleEffectHandler: start ")
+        onDispose {
+            Log.d("DisposibleEffectHandler", "DisposibleEffectHandler: clean up ")
+        }
+    }
+
+    Button(onClick = { state = !state }) {
+        Text(text = "click me")
+    }
+}
+
+/**
+ * Second Example of Disposible effect
+ */
+
+@Composable
+fun MediaComposable(modifier: Modifier = Modifier) {
+    val context  = LocalContext.current
+    DisposableEffect(key1 = Unit) {
+        val mediaPlayer = MediaPlayer.create(context,R.raw.ak)
+        mediaPlayer.start()
+        onDispose {
+            mediaPlayer.stop()
+            mediaPlayer.release()
+        }
+    }
+}
+
+/**
+ * Third Example of Disposible effect
+ */
+@RequiresApi(Build.VERSION_CODES.R)
+@SuppressLint("WrongConstant")
+@Composable
+fun KeyBoardComposable(){
+val view = LocalView.current
+DisposableEffect(key1 = Unit) {
+    //This line creates a new instance of OnGlobalLayoutListener.
+    // This listener will be triggered every time the layout of the view tree is changed.
+    // The lambda inside it will be executed when the layout is finished and the view tree is drawn.
+
+    val listner = ViewTreeObserver.OnGlobalLayoutListener {
+        //This line retrieves the current window insets for the view.
+        // Insets are the areas of a window where other UI elements (like the status bar, navigation bar, or keyboard) occupy space.
+        val insets = ViewCompat.getRootWindowInsets(view)
+        //This line checks if the Input Method Editor (IME), which typically refers to the on-screen keyboard, is visible or not.
+        //insets?.isVisible(WindowInsets.Type.ime()) returns a Boolean value: true if the keyboard is visible, or false if it is not.
+        // If insets is null, the ?. operator ensures that isKeyBoardVisible is null as well.
+        val isKeyBoardVisible = insets?.isVisible(WindowInsets.Type.ime())
+        Log.d("KeyBoardComposable", "KeyBoardComposable: ${isKeyBoardVisible.toString()} ")
+    }
+    //This line registers the listner with the view's ViewTreeObserver.
+    // The ViewTreeObserver is a utility class that provides notifications when certain events happen in the view tree.
+    // By adding the listener, the app is set up to monitor changes in the layout, specifically to detect changes that might indicate the keyboard is shown or hidden.
+    view.viewTreeObserver.addOnGlobalLayoutListener(listner)
+    onDispose {
+        view.viewTreeObserver.removeOnGlobalLayoutListener(listner)
+    }
+}
 }
