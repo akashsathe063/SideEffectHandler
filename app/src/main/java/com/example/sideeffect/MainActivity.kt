@@ -10,15 +10,20 @@ import android.view.WindowInsets
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -27,12 +32,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextAlign
@@ -55,9 +62,11 @@ class MainActivity : ComponentActivity() {
 //                App()
 //                DisposibleEffectHandler()
 //                MediaComposable()
-                KeyBoardComposable()
-
-                TextField(value = "", onValueChange = {})
+//                KeyBoardComposable()
+//
+//                TextField(value = "", onValueChange = {})
+//                ProduceStateEffectHandler()
+                Loader()
             }
         }
     }
@@ -253,9 +262,9 @@ fun DisposibleEffectHandler() {
 
 @Composable
 fun MediaComposable(modifier: Modifier = Modifier) {
-    val context  = LocalContext.current
+    val context = LocalContext.current
     DisposableEffect(key1 = Unit) {
-        val mediaPlayer = MediaPlayer.create(context,R.raw.ak)
+        val mediaPlayer = MediaPlayer.create(context, R.raw.ak)
         mediaPlayer.start()
         onDispose {
             mediaPlayer.stop()
@@ -270,29 +279,78 @@ fun MediaComposable(modifier: Modifier = Modifier) {
 @RequiresApi(Build.VERSION_CODES.R)
 @SuppressLint("WrongConstant")
 @Composable
-fun KeyBoardComposable(){
-val view = LocalView.current
-DisposableEffect(key1 = Unit) {
-    //This line creates a new instance of OnGlobalLayoutListener.
-    // This listener will be triggered every time the layout of the view tree is changed.
-    // The lambda inside it will be executed when the layout is finished and the view tree is drawn.
+fun KeyBoardComposable() {
+    val view = LocalView.current
+    DisposableEffect(key1 = Unit) {
+        //This line creates a new instance of OnGlobalLayoutListener.
+        // This listener will be triggered every time the layout of the view tree is changed.
+        // The lambda inside it will be executed when the layout is finished and the view tree is drawn.
 
-    val listner = ViewTreeObserver.OnGlobalLayoutListener {
-        //This line retrieves the current window insets for the view.
-        // Insets are the areas of a window where other UI elements (like the status bar, navigation bar, or keyboard) occupy space.
-        val insets = ViewCompat.getRootWindowInsets(view)
-        //This line checks if the Input Method Editor (IME), which typically refers to the on-screen keyboard, is visible or not.
-        //insets?.isVisible(WindowInsets.Type.ime()) returns a Boolean value: true if the keyboard is visible, or false if it is not.
-        // If insets is null, the ?. operator ensures that isKeyBoardVisible is null as well.
-        val isKeyBoardVisible = insets?.isVisible(WindowInsets.Type.ime())
-        Log.d("KeyBoardComposable", "KeyBoardComposable: ${isKeyBoardVisible.toString()} ")
-    }
-    //This line registers the listner with the view's ViewTreeObserver.
-    // The ViewTreeObserver is a utility class that provides notifications when certain events happen in the view tree.
-    // By adding the listener, the app is set up to monitor changes in the layout, specifically to detect changes that might indicate the keyboard is shown or hidden.
-    view.viewTreeObserver.addOnGlobalLayoutListener(listner)
-    onDispose {
-        view.viewTreeObserver.removeOnGlobalLayoutListener(listner)
+        val listner = ViewTreeObserver.OnGlobalLayoutListener {
+            //This line retrieves the current window insets for the view.
+            // Insets are the areas of a window where other UI elements (like the status bar, navigation bar, or keyboard) occupy space.
+            val insets = ViewCompat.getRootWindowInsets(view)
+            //This line checks if the Input Method Editor (IME), which typically refers to the on-screen keyboard, is visible or not.
+            //insets?.isVisible(WindowInsets.Type.ime()) returns a Boolean value: true if the keyboard is visible, or false if it is not.
+            // If insets is null, the ?. operator ensures that isKeyBoardVisible is null as well.
+            val isKeyBoardVisible = insets?.isVisible(WindowInsets.Type.ime())
+            Log.d("KeyBoardComposable", "KeyBoardComposable: ${isKeyBoardVisible.toString()} ")
+        }
+        //This line registers the listner with the view's ViewTreeObserver.
+        // The ViewTreeObserver is a utility class that provides notifications when certain events happen in the view tree.
+        // By adding the listener, the app is set up to monitor changes in the layout, specifically to detect changes that might indicate the keyboard is shown or hidden.
+        view.viewTreeObserver.addOnGlobalLayoutListener(listner)
+        onDispose {
+            view.viewTreeObserver.removeOnGlobalLayoutListener(listner)
+        }
     }
 }
+
+/**
+ * Produce state :-
+ * a produce state side effect handler is combination of launchEffect and state object
+ */
+
+@SuppressLint("ProduceStateDoesNotAssignValue")
+@Composable
+fun ProduceStateEffectHandler(modifier: Modifier = Modifier) {
+    val state = produceState(initialValue = 0) {
+        for (i in 1..10) {
+            delay(1000)
+            value++
+        }
+    }
+
+    Text(
+        text = state.value.toString(),
+        style = MaterialTheme.typography.titleLarge
+    )
+}
+
+/**
+ * Example 2  producestate
+ */
+
+@Composable
+fun Loader(modifier: Modifier = Modifier) {
+    val degree = produceState(initialValue = 0) {
+        while (true) {
+            delay(16)
+            value = (value + 10) % 360
+        }
+    }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Image(imageVector = Icons.Default.Refresh, contentDescription = "refresh",
+        modifier = Modifier
+            .size(60.dp)
+            .rotate(degree.value.toFloat()))
+
+            Text(text = "Loading")
+        }
+    }
 }
