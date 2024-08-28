@@ -29,6 +29,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.view.ViewCompat
 import com.example.sideeffect.ui.theme.SideEffectTheme
 import kotlinx.coroutines.delay
@@ -66,7 +68,8 @@ class MainActivity : ComponentActivity() {
 //
 //                TextField(value = "", onValueChange = {})
 //                ProduceStateEffectHandler()
-                Loader()
+//                Loader()
+                derived()
             }
         }
     }
@@ -352,5 +355,39 @@ fun Loader(modifier: Modifier = Modifier) {
 
             Text(text = "Loading")
         }
+    }
+}
+
+/**
+ * DerivedStateOf:-
+ * this is the deriving new state on the basis of the objects of your state.
+ * that means creating a new state object on the basis of your exixting state.
+ */
+
+@SuppressLint("UnrememberedMutableState", "ProduceStateDoesNotAssignValue")
+@Composable
+fun derived(modifier: Modifier = Modifier) {
+    val tableOf = remember {
+        mutableIntStateOf(5)
+    }
+
+//    val index = remember {
+//        mutableIntStateOf(1)
+//    }
+    val index = produceState(initialValue = 1) {
+        for (i in 1 .. 9){
+            delay(1000)
+            value++
+        }
+    }
+
+    val message = derivedStateOf {
+        "${tableOf.value} * ${index.value} = ${tableOf.value * index.value}"
+    }
+
+    Box(contentAlignment = Alignment.Center,
+        modifier = modifier.fillMaxSize()) {
+        Text(text = message.value,
+            fontSize = 30.sp)
     }
 }
